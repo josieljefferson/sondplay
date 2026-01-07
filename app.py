@@ -112,7 +112,16 @@ ALL_CHANNELS = {**CANAIS_YT, **JSON_CHANNELS}
 @app.route("/")
 def index():
     """Página inicial com lista de canais"""
-    html = """
+    
+    # Calcular estatísticas
+    yt_count = len(CANAIS_YT)
+    json_count = len(JSON_CHANNELS)
+    total_count = len(ALL_CHANNELS)
+    tvg_count = len(set(USED_TVG_IDS))
+    server_url_value = server_url()
+    date = datetime.now().strftime("%d/%m/%Y")
+    
+    html = f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -120,22 +129,22 @@ def index():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>📺 Servidor IPTV Integrado</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            h1 { color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }
-            .stats { background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-            .channels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-            .channel-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; transition: transform 0.2s; }
-            .channel-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-            .channel-logo { max-width: 60px; max-height: 60px; margin-right: 15px; float: left; }
-            .channel-name { font-weight: bold; margin-bottom: 5px; }
-            .channel-group { color: #666; font-size: 0.9em; }
-            .channel-actions { margin-top: 10px; }
-            .btn { display: inline-block; padding: 8px 15px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px; }
-            .btn:hover { background: #45a049; }
-            .footer { margin-top: 30px; text-align: center; color: #666; }
-            .filter { margin-bottom: 20px; }
-            .filter input { padding: 10px; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
+            body {{ font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }}
+            .container {{ max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            h1 {{ color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }}
+            .stats {{ background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }}
+            .channels-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }}
+            .channel-card {{ background: white; border: 1px solid #ddd; border-radius: 8px; padding: 15px; transition: transform 0.2s; }}
+            .channel-card:hover {{ transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }}
+            .channel-logo {{ max-width: 60px; max-height: 60px; margin-right: 15px; float: left; }}
+            .channel-name {{ font-weight: bold; margin-bottom: 5px; }}
+            .channel-group {{ color: #666; font-size: 0.9em; }}
+            .channel-actions {{ margin-top: 10px; }}
+            .btn {{ display: inline-block; padding: 8px 15px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px; }}
+            .btn:hover {{ background: #45a049; }}
+            .footer {{ margin-top: 30px; text-align: center; color: #666; }}
+            .filter {{ margin-bottom: 20px; }}
+            .filter input {{ padding: 10px; width: 100%; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }}
         </style>
     </head>
     <body>
@@ -174,7 +183,7 @@ def index():
                 </div>
         """
     
-    html += """
+    html += f"""
             </div>
             
             <div style="margin-top: 30px; padding: 20px; background: #e3f2fd; border-radius: 8px;">
@@ -187,8 +196,8 @@ def index():
                 </p>
                 <p style="margin-top: 15px;">
                     <strong>Para usar no IPTV Player:</strong><br>
-                    URL da Playlist: <code>{server_url}/playlist.m3u</code><br>
-                    URL do EPG: <code>{server_url}/epg.xml</code>
+                    URL da Playlist: <code>{server_url_value}/playlist.m3u</code><br>
+                    URL do EPG: <code>{server_url_value}/epg.xml</code>
                 </p>
             </div>
             
@@ -202,7 +211,7 @@ def index():
             function filterChannels() {{
                 var input = document.getElementById('search');
                 var filter = input.value.toLowerCase();
-                var cards = document.getElementsByClassName('channel-card');
+                var cards = document.querySelectorAll('.channel-card');
                 
                 for (var i = 0; i < cards.length; i++) {{
                     var name = cards[i].getAttribute('data-name');
@@ -218,14 +227,7 @@ def index():
         </script>
     </body>
     </html>
-    """.format(
-        yt_count=len(CANAIS_YT),
-        json_count=len(JSON_CHANNELS),
-        total_count=len(ALL_CHANNELS),
-        tvg_count=len(set(USED_TVG_IDS)),
-        server_url=server_url(),
-        date=datetime.now().strftime("%d/%m/%Y")
-    )
+    """
     
     return html
 
@@ -327,10 +329,10 @@ def stream(canal):
 def playlist():
     """Gera playlist M3U8"""
     base = server_url()
-    out = """#EXTM3U x-tvg-url="{}"
-#PLAYLISTV: pltv-logo="https://cdn-icons-png.flaticon.com/256/25/25231.png" pltv-name="Servidor IPTV Integrado" pltv-description="Canais do JSON + YouTube" pltv-cover="https://images.icon-icons.com/2407/PNG/512/gitlab_icon_146171.png" pltv-author="Sistema Integrado" pltv-site="{}"
+    out = f"""#EXTM3U x-tvg-url="{base}/epg.xml"
+#PLAYLISTV: pltv-logo="https://cdn-icons-png.flaticon.com/256/25/25231.png" pltv-name="Servidor IPTV Integrado" pltv-description="Canais do JSON + YouTube" pltv-cover="https://images.icon-icons.com/2407/PNG/512/gitlab_icon_146171.png" pltv-author="Sistema Integrado" pltv-site="{base}"
 
-""".format(f"{base}/epg.xml", base)
+"""
     
     # Adicionar canais YouTube especiais
     for key, channel in CANAIS_YT.items():
